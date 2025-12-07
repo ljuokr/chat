@@ -3,7 +3,7 @@ const formEl = document.getElementById("form");
 const inputEl = document.getElementById("input");
 
 // 1) Nach dem Vercel-Deploy einsetzen:
-const API_BASE = "https://DEIN-VERCEL-PROJEKT.vercel.app";
+const API_BASE = "https://chat-ln23txa3a-lukas-projects-ca12335d.vercel.app";
 
 function addMsg(role, text) {
   const div = document.createElement("div");
