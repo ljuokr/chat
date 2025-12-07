@@ -5,6 +5,8 @@ const versionEl = document.getElementById("version");
 const tokenStatsEl = document.getElementById("token-stats");
 const modelInfoEl = document.getElementById("model-info");
 const costInfoEl = document.getElementById("cost-info");
+const modelsBtnEl = document.getElementById("models-btn");
+const modelsOutputEl = document.getElementById("models-output");
 const APP_VERSION = "1.2";
 const STORAGE_KEY = "mini-chat-token-lifetime";
 const TOKEN_PRICE_PER_M = 10; // USD pro 1 Mio Tokens
@@ -129,3 +131,29 @@ formEl.addEventListener("submit", async (e) => {
     addMsg("System", `Netzwerkfehler: ${err.message}`);
   }
 });
+
+async function loadModels() {
+  if (!modelsOutputEl) return;
+  modelsOutputEl.textContent = "Lade Modelle...";
+  try {
+    const res = await fetch(`${API_BASE}/api/models`);
+    if (!res.ok) {
+      const txt = await res.text();
+      modelsOutputEl.textContent = `Fehler: ${res.status} ${txt}`;
+      return;
+    }
+    const data = await res.json();
+    const models = Array.isArray(data.models) ? data.models : [];
+    if (!models.length) {
+      modelsOutputEl.textContent = "Keine Modelle gefunden.";
+      return;
+    }
+    modelsOutputEl.textContent = models.join("\n");
+  } catch (err) {
+    modelsOutputEl.textContent = `Netzwerkfehler: ${err.message}`;
+  }
+}
+
+if (modelsBtnEl) {
+  modelsBtnEl.addEventListener("click", loadModels);
+}
