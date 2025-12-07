@@ -4,6 +4,7 @@ const inputEl = document.getElementById("input");
 const versionEl = document.getElementById("version");
 const tokenStatsEl = document.getElementById("token-stats");
 let totalTokens = 0;
+const APP_VERSION = "1.1";
 
 // 1) Nach dem Vercel-Deploy einsetzen:
 const API_BASE = "https://chat-pearl-iota.vercel.app";
@@ -11,7 +12,7 @@ const API_BASE = "https://chat-pearl-iota.vercel.app";
 // Version + Deployzeit im Title und Header anzeigen (basis: lastModified des Dokuments)
 const deployTime = new Date(document.lastModified);
 const deployTimeText = deployTime.toLocaleString("de-DE");
-const versionLabel = `Mini Chat v1.0 — Deploy: ${deployTimeText}`;
+const versionLabel = `Mini Chat v${APP_VERSION} — Deploy: ${deployTimeText}`;
 document.title = versionLabel;
 if (versionEl) versionEl.textContent = versionLabel;
 if (tokenStatsEl) tokenStatsEl.textContent = "Tokens gesamt: 0";
@@ -48,10 +49,14 @@ formEl.addEventListener("submit", async (e) => {
     const data = await res.json();
     addMsg("AI", data.reply || "(keine Antwort)");
 
-    if (data.usage) {
-      const prompt = data.usage.prompt_tokens ?? "?";
-      const completion = data.usage.completion_tokens ?? "?";
-      const total = data.usage.total_tokens ?? "?";
+    const usage = data.usage;
+    if (usage && typeof usage === "object") {
+      const prompt = usage.prompt_tokens ?? usage.input_tokens ?? "?";
+      const completion = usage.completion_tokens ?? usage.output_tokens ?? "?";
+      let total = usage.total_tokens ?? "?";
+      if (total === "?" && typeof prompt === "number" && typeof completion === "number") {
+        total = prompt + completion;
+      }
       if (typeof total === "number") {
         totalTokens += total;
       }
@@ -63,6 +68,9 @@ formEl.addEventListener("submit", async (e) => {
         const sumText = Number.isFinite(totalTokens) ? totalTokens : "–";
         tokenStatsEl.textContent = `Tokens gesamt: ${sumText} (letzte Anfrage: Prompt ${prompt}, Completion ${completion}, Total ${total})`;
       }
+    } else {
+      addMsg("Tokens", "Keine Usage-Daten zurückgegeben.");
+      if (tokenStatsEl) tokenStatsEl.textContent = "Tokens gesamt: – (keine Usage-Daten)";
     }
   } catch (err) {
     addMsg("System", `Netzwerkfehler: ${err.message}`);
