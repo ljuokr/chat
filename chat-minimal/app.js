@@ -14,7 +14,7 @@ const TOKEN_PRICE_PER_M = 10; // USD pro 1 Mio Tokens
 const PRICE_PER_TOKEN = TOKEN_PRICE_PER_M / 1_000_000;
 let totalTokensSession = 0;
 let totalTokensLifetime = 0;
-const EMPTY_DOCX_B64 = "UEsDBBQABgAIAAAAIQAAAAAAAAAAAAAAAAAJAAAAd29yZC9VVAkAA2Zp/2dpf/9ldXgLAAEE6AMAAAToAwAAUEsDBBQABgAIAAAAIQAAAAAAAAAAAAAAAAAPAAAAd29yZC9fcmVscy9VVAkAA29p/2dpf/9ldXgLAAEE6AMAAAToAwAAUEsDBBQABgAIAAAAIQAAAAAAAAAAAAAAAAAQAAAAd29yZC9yZWxzL2RvY3VtZW50LnhtbFVUCQADb2n/Z2l//2V1eAsAAQToAwAABOgDAABQSwMEFAAGAAgAAAAhAAAAAAAAAAAAAAAAAAAAAAB3b3JkL2RvY3VtZW50LnhtbFVUCQADaWn/Z2l//2V1eAsAAQToAwAABOgDAABQSwECFAMUAAYACAAAACEAAAAAAAAAAAAAAAAACQAAAAAAAAAAAAAAAAAAAAAAAHdvcmQvVVRBQANmaf9ldXgLAAEE6AMAAAToAwAAUEsBAhQDFAA GAAgAAAAhAAAAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAAAAAAAAAHdvcmQvX3JlbHMvVVRBQANvaf9ldXgLAAEE6AMAAAToAwAAUEsBAhQDFAA GAAgAAAAhAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAHdvcmQvcmVscy9kb2N1bWVudC54bWxVVAUAA72o/2V1eAsAAQToAwAABOgDAABQSwECFAMUAAYACAAAACEAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAHdvcmQvZG9jdW1lbnQueG1sVVQFAANpaf9ldXgLAAEE6AMAAAToAwAAUEsFBgAAAAAEAAQA+wAAAGIAAAAAAA==";
+let lastDocxB64 = null;
 
 // 1) Nach dem Vercel-Deploy einsetzen:
 const API_BASE = "https://chat-pearl-iota.vercel.app";
@@ -54,6 +54,20 @@ function fmtTokens(val) {
 
 function fmtCost(tokens) {
   return Number.isFinite(tokens) ? `$${(tokens * PRICE_PER_TOKEN).toFixed(4)}` : "–";
+}
+
+function extractDocxBase64(text) {
+  if (!text || typeof text !== "string") return null;
+  const markerStart = text.indexOf("BEGIN-DATEI");
+  const markerEnd = text.indexOf("ENDE-DATEI");
+  if (markerStart !== -1 && markerEnd !== -1 && markerEnd > markerStart) {
+    const segment = text.slice(markerStart, markerEnd);
+    const match = segment.match(/[A-Za-z0-9+/=]+/g);
+    if (match && match.length) return match.join("");
+  }
+  const b64Match = text.match(/UEsDB[0-9A-Za-z+/=]+/); // ZIP header for docx
+  if (b64Match && b64Match[0]) return b64Match[0];
+  return null;
 }
 
 totalTokensLifetime = loadLifetimeTokens();
@@ -129,6 +143,15 @@ formEl.addEventListener("submit", async (e) => {
       if (tokenStatsEl) tokenStatsEl.textContent = "Tokens gesamt: – (keine Usage-Daten)";
       if (costInfoEl) costInfoEl.textContent = "Kosten: –";
     }
+
+    const docxB64 = extractDocxBase64(data.reply);
+    if (docxB64) {
+      lastDocxB64 = docxB64;
+      addMsg("System", "Word-Datei erkannt: Button \"Erhaltenes Word herunterladen\" ist aktiv.");
+      if (docxBtnEl) docxBtnEl.disabled = false;
+    } else if (docxBtnEl && !lastDocxB64) {
+      docxBtnEl.disabled = true;
+    }
   } catch (err) {
     addMsg("System", `Netzwerkfehler: ${err.message}`);
   }
@@ -162,8 +185,12 @@ if (modelsBtnEl) {
 
 function downloadEmptyDocx() {
   if (!docxBtnEl) return;
+  if (!lastDocxB64) {
+    addMsg("System", "Keine Word-Datei gefunden. Bitte eine Antwort abwarten, die eine Datei enthält.");
+    return;
+  }
   try {
-    const cleaned = EMPTY_DOCX_B64.replace(/\s+/g, "");
+    const cleaned = lastDocxB64.replace(/\s+/g, "");
     const bin = atob(cleaned);
     const bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) {
@@ -187,4 +214,5 @@ function downloadEmptyDocx() {
 
 if (docxBtnEl) {
   docxBtnEl.addEventListener("click", downloadEmptyDocx);
+  docxBtnEl.disabled = true;
 }
