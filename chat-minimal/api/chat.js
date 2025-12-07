@@ -21,7 +21,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Server misconfigured" });
     }
 
-    // Chat Completions API (gpt-5.1)
+    // Chat Completions API (gpt-5.1 chat latest)
     const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
         "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "gpt-5.1",
+        model: "gpt-5.1-chat-latest",
         messages: [
           { role: "user", content: message }
         ],
