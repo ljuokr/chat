@@ -32,8 +32,7 @@ export default async function handler(req, res) {
         model: "gpt-5.1-chat-latest",
         messages: [
           { role: "user", content: message }
-        ],
-        temperature: 0.7
+        ]
       })
     });
 
