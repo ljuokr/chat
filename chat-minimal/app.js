@@ -1,6 +1,7 @@
 const chatEl = document.getElementById("chat");
 const formEl = document.getElementById("form");
 const inputEl = document.getElementById("input");
+let totalTokens = 0;
 
 // 1) Nach dem Vercel-Deploy einsetzen:
 const API_BASE = "https://chat-pearl-iota.vercel.app";
@@ -36,6 +37,19 @@ formEl.addEventListener("submit", async (e) => {
 
     const data = await res.json();
     addMsg("AI", data.reply || "(keine Antwort)");
+
+    if (data.usage) {
+      const prompt = data.usage.prompt_tokens ?? "?";
+      const completion = data.usage.completion_tokens ?? "?";
+      const total = data.usage.total_tokens ?? "?";
+      if (typeof total === "number") {
+        totalTokens += total;
+      }
+      const totalDisplay = typeof totalTokens === "number" && Number.isFinite(totalTokens)
+        ? ` | Gesamt: ${totalTokens}`
+        : "";
+      addMsg("Tokens", `Prompt: ${prompt} | Completion: ${completion} | Total: ${total}${totalDisplay}`);
+    }
   } catch (err) {
     addMsg("System", `Netzwerkfehler: ${err.message}`);
   }
