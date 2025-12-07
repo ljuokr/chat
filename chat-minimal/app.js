@@ -3,6 +3,7 @@ const formEl = document.getElementById("form");
 const inputEl = document.getElementById("input");
 const versionEl = document.getElementById("version");
 const tokenStatsEl = document.getElementById("token-stats");
+const modelInfoEl = document.getElementById("model-info");
 let totalTokens = 0;
 const APP_VERSION = "1.1";
 
@@ -15,6 +16,7 @@ const deployTimeText = deployTime.toLocaleString("de-DE");
 const versionLabel = `Mini Chat v${APP_VERSION} — Deploy: ${deployTimeText}`;
 document.title = versionLabel;
 if (versionEl) versionEl.textContent = versionLabel;
+if (modelInfoEl) modelInfoEl.textContent = "Modell: unbekannt";
 if (tokenStatsEl) tokenStatsEl.textContent = "Tokens gesamt: 0";
 
 function addMsg(role, text) {
@@ -50,6 +52,12 @@ formEl.addEventListener("submit", async (e) => {
     addMsg("AI", data.reply || "(keine Antwort)");
 
     const usage = data.usage;
+    if (data.model && modelInfoEl) {
+      modelInfoEl.textContent = `Modell: ${data.model}`;
+    } else if (modelInfoEl) {
+      modelInfoEl.textContent = "Modell: (keine Angabe)";
+    }
+
     if (usage && typeof usage === "object") {
       const prompt = usage.prompt_tokens ?? usage.input_tokens ?? "?";
       const completion = usage.completion_tokens ?? usage.output_tokens ?? "?";

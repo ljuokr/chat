@@ -55,8 +55,9 @@ export default async function handler(req, res) {
         : "");
 
     const usage = data && typeof data === "object" ? data.usage || null : null;
+    const model = data && typeof data === "object" ? data.model || data.model_id || null : null;
 
-    return res.status(200).json({ reply: reply || "", usage });
+    return res.status(200).json({ reply: reply || "", usage, model });
   } catch (err) {
     return res.status(500).json({ error: err.message || "Unknown error" });
   }
