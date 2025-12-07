@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mini Chat</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 24px; }
+    #chat { border: 1px solid #ddd; padding: 12px; height: 360px; overflow: auto; }
+    .msg { margin: 8px 0; }
+    .role { font-weight: 600; }
+    form { display: flex; gap: 8px; margin-top: 12px; }
+    input { flex: 1; padding: 8px; }
+    button { padding: 8px 12px; }
+  </style>
+</head>
+<body>
+  <h1>Mini Chat</h1>
+
+  <div id="chat"></div>
+
+  <form id="form">
+    <input id="input" autocomplete="off" placeholder="Nachricht..." />
+    <button type="submit">Senden</button>
+  </form>
+
+  <script src="app.js"></script>
+</body>
+</html>
