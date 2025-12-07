@@ -7,12 +7,14 @@ const modelInfoEl = document.getElementById("model-info");
 const costInfoEl = document.getElementById("cost-info");
 const modelsBtnEl = document.getElementById("models-btn");
 const modelsOutputEl = document.getElementById("models-output");
+const docxBtnEl = document.getElementById("docx-btn");
 const APP_VERSION = "1.3";
 const STORAGE_KEY = "mini-chat-token-lifetime";
 const TOKEN_PRICE_PER_M = 10; // USD pro 1 Mio Tokens
 const PRICE_PER_TOKEN = TOKEN_PRICE_PER_M / 1_000_000;
 let totalTokensSession = 0;
 let totalTokensLifetime = 0;
+const EMPTY_DOCX_B64 = "UEsDBBQABgAIAAAAIQAAAAAAAAAAAAAAAAAJAAAAd29yZC9VVAkAA2Zp/2dpf/9ldXgLAAEE6AMAAAToAwAAUEsDBBQABgAIAAAAIQAAAAAAAAAAAAAAAAAPAAAAd29yZC9fcmVscy9VVAkAA29p/2dpf/9ldXgLAAEE6AMAAAToAwAAUEsDBBQABgAIAAAAIQAAAAAAAAAAAAAAAAAQAAAAd29yZC9yZWxzL2RvY3VtZW50LnhtbFVUCQADb2n/Z2l//2V1eAsAAQToAwAABOgDAABQSwMEFAAGAAgAAAAhAAAAAAAAAAAAAAAAAAAAAAB3b3JkL2RvY3VtZW50LnhtbFVUCQADaWn/Z2l//2V1eAsAAQToAwAABOgDAABQSwECFAMUAAYACAAAACEAAAAAAAAAAAAAAAAACQAAAAAAAAAAAAAAAAAAAAAAAHdvcmQvVVRBQANmaf9ldXgLAAEE6AMAAAToAwAAUEsBAhQDFAA GAAgAAAAhAAAAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAAAAAAAAAHdvcmQvX3JlbHMvVVRBQANvaf9ldXgLAAEE6AMAAAToAwAAUEsBAhQDFAA GAAgAAAAhAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAHdvcmQvcmVscy9kb2N1bWVudC54bWxVVAUAA72o/2V1eAsAAQToAwAABOgDAABQSwECFAMUAAYACAAAACEAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAHdvcmQvZG9jdW1lbnQueG1sVVQFAANpaf9ldXgLAAEE6AMAAAToAwAAUEsFBgAAAAAEAAQA+wAAAGIAAAAAAA==";
 
 // 1) Nach dem Vercel-Deploy einsetzen:
 const API_BASE = "https://chat-pearl-iota.vercel.app";
@@ -156,4 +158,33 @@ async function loadModels() {
 
 if (modelsBtnEl) {
   modelsBtnEl.addEventListener("click", loadModels);
+}
+
+function downloadEmptyDocx() {
+  if (!docxBtnEl) return;
+  try {
+    const cleaned = EMPTY_DOCX_B64.replace(/\s+/g, "");
+    const bin = atob(cleaned);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) {
+      bytes[i] = bin.charCodeAt(i);
+    }
+    const blob = new Blob([bytes], {
+      type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "leer.docx";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    addMsg("System", `Konnte Word-Datei nicht erzeugen: ${err.message}`);
+  }
+}
+
+if (docxBtnEl) {
+  docxBtnEl.addEventListener("click", downloadEmptyDocx);
 }
