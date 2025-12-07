@@ -21,17 +21,19 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Server misconfigured" });
     }
 
-    // Responses API
-    const openaiRes = await fetch("https://api.openai.com/v1/responses", {
+    // Chat Completions API (gpt-5.1)
+    const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        // Nimm fuer den Start ein guenstigeres Modell, wenn verfuegbar
-        model: "gpt-5-mini",
-        input: message
+        model: "gpt-5.1",
+        messages: [
+          { role: "user", content: message }
+        ],
+        temperature: 0.7
       })
     });
 
@@ -42,17 +44,14 @@ export default async function handler(req, res) {
 
     const data = await openaiRes.json();
 
-    // Viele SDKs liefern output_text.
-    // Bei raw JSON ist oft ein message-Block in output.
     const reply =
-      data.output_text ||
-      (Array.isArray(data.output)
-        ? data.output
-            .flatMap(i => i.content || [])
-            .filter(c => c.type === "output_text")
-            .map(c => c.text)
-            .join("\n")
-        : "");
+      (data.choices &&
+        Array.isArray(data.choices) &&
+        data.choices[0] &&
+        data.choices[0].message &&
+        typeof data.choices[0].message.content === "string" &&
+        data.choices[0].message.content) ||
+      "";
 
     const usage = data && typeof data === "object" ? data.usage || null : null;
     const model = data && typeof data === "object" ? data.model || data.model_id || null : null;
