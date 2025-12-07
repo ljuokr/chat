@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         // Nimm fuer den Start ein guenstigeres Modell, wenn verfuegbar
-        model: "gpt-5.1-mini",
+        model: "gpt-5-mini",
         input: message
       })
     });
