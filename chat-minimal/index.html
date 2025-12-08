@@ -15,10 +15,15 @@
     form { display: flex; gap: 8px; margin-top: 12px; }
     input { flex: 1; padding: 8px; }
     button { padding: 8px 12px; }
-    #models-panel { border: 1px solid #ddd; padding: 12px; border-radius: 8px; background: #fafafa; }
-    #models-panel h2 { margin-top: 0; font-size: 16px; }
-    #models-btn, #docx-btn { width: 100%; margin-bottom: 8px; }
-    #models-output { margin-top: 8px; font-size: 14px; color: #222; max-height: 320px; overflow: auto; white-space: pre-wrap; }
+    #side { display: grid; gap: 12px; }
+    .panel { border: 1px solid #ddd; padding: 12px; border-radius: 8px; background: #fafafa; }
+    .panel h2 { margin-top: 0; font-size: 16px; }
+    .panel button { width: 100%; }
+    #models-output, #docx-list { margin-top: 8px; font-size: 14px; color: #222; max-height: 200px; overflow: auto; white-space: pre-wrap; }
+    #docx-list .docx-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid #eee; }
+    #docx-list .docx-item:last-child { border-bottom: none; }
+    #docx-list button { width: auto; padding: 4px 8px; }
+    #word-options { display: flex; gap: 8px; align-items: center; margin-top: 8px; font-size: 14px; }
   </style>
 </head>
 <body>
@@ -40,12 +45,22 @@
       </form>
     </div>
 
-    <aside id="models-panel">
-      <h2>Modelle</h2>
-      <button id="models-btn" type="button">Verfügbare Modelle abrufen</button>
-      <button id="docx-btn" type="button">Erhaltenes Word herunterladen</button>
-      <div id="models-output">Noch nichts geladen.</div>
-    </aside>
+    <div id="side">
+      <aside class="panel" id="models-panel">
+        <h2>Modelle</h2>
+        <button id="models-btn" type="button">Verfügbare Modelle abrufen</button>
+        <div id="models-output">Noch nichts geladen.</div>
+      </aside>
+
+      <aside class="panel" id="docx-panel">
+        <h2>Word-Dateien</h2>
+        <div id="word-options">
+          <label><input type="checkbox" id="word-toggle" /> Word anfordern</label>
+          <button id="docx-btn" type="button">Letzte Word-Datei speichern</button>
+        </div>
+        <div id="docx-list">Noch keine Dateien.</div>
+      </aside>
+    </div>
   </div>
 
   <script src="app.js"></script>

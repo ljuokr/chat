@@ -8,13 +8,16 @@ const costInfoEl = document.getElementById("cost-info");
 const modelsBtnEl = document.getElementById("models-btn");
 const modelsOutputEl = document.getElementById("models-output");
 const docxBtnEl = document.getElementById("docx-btn");
-const APP_VERSION = "1.3";
+const docxListEl = document.getElementById("docx-list");
+const wordToggleEl = document.getElementById("word-toggle");
+const APP_VERSION = "1.4";
 const STORAGE_KEY = "mini-chat-token-lifetime";
 const TOKEN_PRICE_PER_M = 10; // USD pro 1 Mio Tokens
 const PRICE_PER_TOKEN = TOKEN_PRICE_PER_M / 1_000_000;
 let totalTokensSession = 0;
 let totalTokensLifetime = 0;
 let lastDocxB64 = null;
+const docxList = [];
 
 // 1) Nach dem Vercel-Deploy einsetzen:
 const API_BASE = "https://chat-pearl-iota.vercel.app";
@@ -70,6 +73,42 @@ function extractDocxBase64(text) {
   return null;
 }
 
+function renderDocxList() {
+  if (!docxListEl) return;
+  if (!docxList.length) {
+    docxListEl.textContent = "Noch keine Dateien.";
+    return;
+  }
+  docxListEl.innerHTML = "";
+  docxList.forEach((item, idx) => {
+    const row = document.createElement("div");
+    row.className = "docx-item";
+    const label = document.createElement("span");
+    label.textContent = item.label;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = "Download";
+    btn.addEventListener("click", () => downloadDocx(idx));
+    row.appendChild(label);
+    row.appendChild(btn);
+    docxListEl.appendChild(row);
+  });
+}
+
+function extractDocxBase64(text) {
+  if (!text || typeof text !== "string") return null;
+  const markerStart = text.indexOf("BEGIN-DATEI");
+  const markerEnd = text.indexOf("ENDE-DATEI");
+  if (markerStart !== -1 && markerEnd !== -1 && markerEnd > markerStart) {
+    const segment = text.slice(markerStart, markerEnd);
+    const match = segment.match(/[A-Za-z0-9+/=]+/g);
+    if (match && match.length) return match.join("");
+  }
+  const b64Match = text.match(/UEsDB[0-9A-Za-z+/=]+/); // ZIP header for docx
+  if (b64Match && b64Match[0]) return b64Match[0];
+  return null;
+}
+
 totalTokensLifetime = loadLifetimeTokens();
 if (tokenStatsEl) tokenStatsEl.textContent = `Tokens (Session): ${fmtTokens(totalTokensSession)} | Gesamt: ${fmtTokens(totalTokensLifetime)}`;
 if (costInfoEl) costInfoEl.textContent = `Kosten geschätzt: ${fmtCost(totalTokensLifetime)}`;
@@ -94,7 +133,7 @@ formEl.addEventListener("submit", async (e) => {
     const res = await fetch(`${API_BASE}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text })
+      body: JSON.stringify({ message: text, wantDocx: !!(wordToggleEl && wordToggleEl.checked) })
     });
 
     if (!res.ok) {
@@ -147,9 +186,12 @@ formEl.addEventListener("submit", async (e) => {
     const docxB64 = extractDocxBase64(data.reply);
     if (docxB64) {
       lastDocxB64 = docxB64;
-      addMsg("System", "Word-Datei erkannt: Button \"Erhaltenes Word herunterladen\" ist aktiv.");
+      const label = `Word #${docxList.length + 1}`;
+      docxList.push({ label, b64: docxB64 });
+      renderDocxList();
+      addMsg("System", "Word-Datei erkannt: Panel \"Word-Dateien\" aktualisiert.");
       if (docxBtnEl) docxBtnEl.disabled = false;
-    } else if (docxBtnEl && !lastDocxB64) {
+    } else if (docxBtnEl && !docxList.length) {
       docxBtnEl.disabled = true;
     }
   } catch (err) {
@@ -183,14 +225,16 @@ if (modelsBtnEl) {
   modelsBtnEl.addEventListener("click", loadModels);
 }
 
-function downloadEmptyDocx() {
-  if (!docxBtnEl) return;
-  if (!lastDocxB64) {
+function downloadDocx(idx) {
+  const entry = typeof idx === "number" ? docxList[idx] : null;
+  const fallback = lastDocxB64 ? { b64: lastDocxB64, label: "Word" } : null;
+  const target = entry || fallback;
+  if (!target) {
     addMsg("System", "Keine Word-Datei gefunden. Bitte eine Antwort abwarten, die eine Datei enthält.");
     return;
   }
   try {
-    const cleaned = lastDocxB64.replace(/\s+/g, "");
+    const cleaned = target.b64.replace(/\s+/g, "");
     const bin = atob(cleaned);
     const bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) {
@@ -202,7 +246,7 @@ function downloadEmptyDocx() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "leer.docx";
+    a.download = `${target.label || "word"}.docx`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -213,6 +257,6 @@ function downloadEmptyDocx() {
 }
 
 if (docxBtnEl) {
-  docxBtnEl.addEventListener("click", downloadEmptyDocx);
+  docxBtnEl.addEventListener("click", () => downloadDocx(docxList.length - 1));
   docxBtnEl.disabled = true;
 }

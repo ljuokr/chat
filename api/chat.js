@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   try {
-    const { message } = req.body || {};
+    const { message, wantDocx } = req.body || {};
     if (!message || typeof message !== "string") {
       return res.status(400).json({ error: "Missing message" });
     }
@@ -22,6 +22,15 @@ export default async function handler(req, res) {
     }
 
     // Chat Completions API (gpt-5.1 chat latest)
+    const systemMessages = [];
+    if (wantDocx) {
+      systemMessages.push({
+        role: "system",
+        content:
+          "Wenn der Nutzer ein Word-Dokument möchte, liefere ein minimales gültiges .docx als Base64 zwischen BEGIN-DATEI und ENDE-DATEI. Sonst normal antworten."
+      });
+    }
+
     const openaiRes = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -31,6 +40,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: "gpt-5.1-chat-latest",
         messages: [
+          ...systemMessages,
           { role: "user", content: message }
         ]
       })
