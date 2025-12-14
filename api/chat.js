@@ -38,10 +38,19 @@ export default async function handler(req, res) {
         markerStart !== -1 && markerEnd !== -1 && markerEnd > markerStart
           ? text.slice(markerStart, markerEnd)
           : text;
-      const start = segment.indexOf("UEsDB"); // ZIP Header
-      if (start === -1) return null;
-      const sliced = segment.slice(start);
-      return normalizeBase64(sliced);
+
+      const match = segment.match(/UEsDB[A-Za-z0-9+/=]+/);
+      if (!match || !match[0]) return null;
+
+      const normalized = normalizeBase64(match[0]);
+      if (!normalized) return null;
+      try {
+        // Validate that the string is decodable
+        Buffer.from(normalized, "base64");
+        return normalized;
+      } catch {
+        return null;
+      }
     };
 
     const stripDocxFromText = (text) => {
