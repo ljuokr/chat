@@ -17,6 +17,7 @@ let totalTokensLifetime = 0;
 let lastDocxB64 = null;
 const docxList = [];
 let lastDocxError = null;
+let lastDocxFallback = false;
 
 // 1) Nach dem Vercel-Deploy einsetzen:
 const API_BASE = "https://chat-pearl-iota.vercel.app";
@@ -163,13 +164,15 @@ formEl.addEventListener("submit", async (e) => {
     }
 
     const docxB64 = data && typeof data === "object" ? sanitizeBase64(data.docx) : null;
+    const isFallback = Boolean(data && data.docxFallback);
     if (docxB64) {
       lastDocxB64 = docxB64;
       lastDocxError = null;
-      const label = `Word #${docxList.length + 1}`;
-      docxList.push({ label, b64: docxB64 });
+      lastDocxFallback = isFallback;
+      const label = `Word #${docxList.length + 1}${isFallback ? " (Fallback)" : ""}`;
+      docxList.push({ label, b64: docxB64, fallback: isFallback });
       renderDocxList();
-      addMsg("System", "Word-Datei erkannt: Panel \"Word-Dateien\" aktualisiert.");
+      addMsg("System", isFallback ? "Fallback-Word erzeugt (Original war unlesbar)." : "Word-Datei erkannt: Panel \"Word-Dateien\" aktualisiert.");
     } else if (!data.docx) {
       addMsg("System", "Keine Word-Datei geliefert.");
     } else {
