@@ -21,6 +21,27 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Server misconfigured" });
     }
 
+    const extractDocxBase64 = (text) => {
+      if (!text || typeof text !== "string") return null;
+      const markerStart = text.indexOf("BEGIN-DATEI");
+      const markerEnd = text.indexOf("ENDE-DATEI");
+      if (markerStart !== -1 && markerEnd !== -1 && markerEnd > markerStart) {
+        const segment = text.slice(markerStart, markerEnd);
+        const match = segment.match(/[A-Za-z0-9+/=]+/g);
+        if (match && match.length) return match.join("");
+      }
+      const b64Match = text.match(/UEsDB[0-9A-Za-z+/=]+/); // ZIP header for docx
+      if (b64Match && b64Match[0]) return b64Match[0];
+      return null;
+    };
+
+    const stripDocxFromText = (text) => {
+      if (!text || typeof text !== "string") return text;
+      let cleaned = text.replace(/BEGIN-DATEI[\\s\\S]*?ENDE-DATEI/gi, "").trim();
+      cleaned = cleaned.replace(/UEsDB[0-9A-Za-z+/=]+/g, "[Word-Datei erstellt]").trim();
+      return cleaned;
+    };
+
     // Chat Completions API (gpt-5.1 chat latest)
     const systemMessages = [];
     if (wantDocx) {
@@ -62,10 +83,13 @@ export default async function handler(req, res) {
         data.choices[0].message.content) ||
       "";
 
+    const docxB64 = extractDocxBase64(reply);
+    const displayText = docxB64 ? stripDocxFromText(reply) : reply;
+
     const usage = data && typeof data === "object" ? data.usage || null : null;
     const model = data && typeof data === "object" ? data.model || data.model_id || null : null;
 
-    return res.status(200).json({ reply: reply || "", usage, model });
+    return res.status(200).json({ reply: displayText || "", docx: docxB64 || null, usage, model });
   } catch (err) {
     return res.status(500).json({ error: err.message || "Unknown error" });
   }

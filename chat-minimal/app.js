@@ -57,20 +57,6 @@ function fmtCost(tokens) {
   return Number.isFinite(tokens) ? `$${(tokens * PRICE_PER_TOKEN).toFixed(4)}` : "–";
 }
 
-function extractDocxBase64(text) {
-  if (!text || typeof text !== "string") return null;
-  const markerStart = text.indexOf("BEGIN-DATEI");
-  const markerEnd = text.indexOf("ENDE-DATEI");
-  if (markerStart !== -1 && markerEnd !== -1 && markerEnd > markerStart) {
-    const segment = text.slice(markerStart, markerEnd);
-    const match = segment.match(/[A-Za-z0-9+/=]+/g);
-    if (match && match.length) return match.join("");
-  }
-  const b64Match = text.match(/UEsDB[0-9A-Za-z+/=]+/); // ZIP header for docx
-  if (b64Match && b64Match[0]) return b64Match[0];
-  return null;
-}
-
 function renderDocxList() {
   if (!docxListEl) return;
   if (!docxList.length) {
@@ -91,20 +77,6 @@ function renderDocxList() {
     row.appendChild(btn);
     docxListEl.appendChild(row);
   });
-}
-
-function extractDocxBase64(text) {
-  if (!text || typeof text !== "string") return null;
-  const markerStart = text.indexOf("BEGIN-DATEI");
-  const markerEnd = text.indexOf("ENDE-DATEI");
-  if (markerStart !== -1 && markerEnd !== -1 && markerEnd > markerStart) {
-    const segment = text.slice(markerStart, markerEnd);
-    const match = segment.match(/[A-Za-z0-9+/=]+/g);
-    if (match && match.length) return match.join("");
-  }
-  const b64Match = text.match(/UEsDB[0-9A-Za-z+/=]+/); // ZIP header for docx
-  if (b64Match && b64Match[0]) return b64Match[0];
-  return null;
 }
 
 totalTokensLifetime = loadLifetimeTokens();
@@ -181,13 +153,15 @@ formEl.addEventListener("submit", async (e) => {
       if (costInfoEl) costInfoEl.textContent = "Kosten: –";
     }
 
-    const docxB64 = extractDocxBase64(data.reply);
+    const docxB64 = data && typeof data === "object" ? data.docx : null;
     if (docxB64) {
       lastDocxB64 = docxB64;
       const label = `Word #${docxList.length + 1}`;
       docxList.push({ label, b64: docxB64 });
       renderDocxList();
       addMsg("System", "Word-Datei erkannt: Panel \"Word-Dateien\" aktualisiert.");
+    } else {
+      addMsg("System", "Keine Word-Datei geliefert.");
     }
   } catch (err) {
     addMsg("System", `Netzwerkfehler: ${err.message}`);
