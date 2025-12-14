@@ -16,6 +16,7 @@ let totalTokensSession = 0;
 let totalTokensLifetime = 0;
 let lastDocxB64 = null;
 const docxList = [];
+let lastDocxError = null;
 
 // 1) Nach dem Vercel-Deploy einsetzen:
 const API_BASE = "https://chat-pearl-iota.vercel.app";
@@ -55,6 +56,14 @@ function fmtTokens(val) {
 
 function fmtCost(tokens) {
   return Number.isFinite(tokens) ? `$${(tokens * PRICE_PER_TOKEN).toFixed(4)}` : "–";
+}
+
+function sanitizeBase64(input) {
+  if (!input || typeof input !== "string") return null;
+  const stripped = input.replace(/[^A-Za-z0-9+/=]/g, "");
+  if (!stripped) return null;
+  const rem = stripped.length % 4;
+  return rem ? stripped + "=".repeat(4 - rem) : stripped;
 }
 
 function renderDocxList() {
@@ -153,15 +162,19 @@ formEl.addEventListener("submit", async (e) => {
       if (costInfoEl) costInfoEl.textContent = "Kosten: –";
     }
 
-    const docxB64 = data && typeof data === "object" ? data.docx : null;
+    const docxB64 = data && typeof data === "object" ? sanitizeBase64(data.docx) : null;
     if (docxB64) {
       lastDocxB64 = docxB64;
+      lastDocxError = null;
       const label = `Word #${docxList.length + 1}`;
       docxList.push({ label, b64: docxB64 });
       renderDocxList();
       addMsg("System", "Word-Datei erkannt: Panel \"Word-Dateien\" aktualisiert.");
-    } else {
+    } else if (!data.docx) {
       addMsg("System", "Keine Word-Datei geliefert.");
+    } else {
+      lastDocxError = "Ungültiges Base64 für Word-Datei.";
+      addMsg("System", "Word-Datei war beschädigt (Base64 ungültig).");
     }
   } catch (err) {
     addMsg("System", `Netzwerkfehler: ${err.message}`);
@@ -203,7 +216,8 @@ function downloadDocx(idx) {
     return;
   }
   try {
-    const cleaned = target.b64.replace(/\s+/g, "");
+    const cleaned = sanitizeBase64(target.b64);
+    if (!cleaned) throw new Error(lastDocxError || "Base64 ungültig.");
     const bin = atob(cleaned);
     const bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) {

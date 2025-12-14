@@ -21,18 +21,27 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "Server misconfigured" });
     }
 
+    const normalizeBase64 = (raw) => {
+      if (!raw || typeof raw !== "string") return null;
+      const cleaned = raw.replace(/[^A-Za-z0-9+/=]/g, "");
+      if (!cleaned) return null;
+      const rem = cleaned.length % 4;
+      return rem ? cleaned + "=".repeat(4 - rem) : cleaned;
+    };
+
     const extractDocxBase64 = (text) => {
       if (!text || typeof text !== "string") return null;
+      // Bevorzugt Inhalt zwischen BEGIN/ENDE, sonst gesamte Antwort.
       const markerStart = text.indexOf("BEGIN-DATEI");
       const markerEnd = text.indexOf("ENDE-DATEI");
-      if (markerStart !== -1 && markerEnd !== -1 && markerEnd > markerStart) {
-        const segment = text.slice(markerStart, markerEnd);
-        const match = segment.match(/[A-Za-z0-9+/=]+/g);
-        if (match && match.length) return match.join("");
-      }
-      const b64Match = text.match(/UEsDB[0-9A-Za-z+/=]+/); // ZIP header for docx
-      if (b64Match && b64Match[0]) return b64Match[0];
-      return null;
+      const segment =
+        markerStart !== -1 && markerEnd !== -1 && markerEnd > markerStart
+          ? text.slice(markerStart, markerEnd)
+          : text;
+      const start = segment.indexOf("UEsDB"); // ZIP Header
+      if (start === -1) return null;
+      const sliced = segment.slice(start);
+      return normalizeBase64(sliced);
     };
 
     const stripDocxFromText = (text) => {
