@@ -2,13 +2,105 @@
 <html lang="de">
 <head>
   <meta charset="utf-8" />
-  <meta http-equiv="refresh" content="0; url=./chat-minimal/" />
-  <title>Mini Chat Redirect</title>
-  <script>
-    window.location.replace('./chat-minimal/');
-  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Apps · Chat & Kalender</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111a2f;
+      --accent: #60a5fa;
+      --accent-2: #7c3aed;
+      --text: #e5edff;
+      --muted: #b4c1dc;
+      --border: #1d2844;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #0b1224 0%, #0e1530 60%, #0a1120 100%);
+      color: var(--text);
+      font-family: "Poppins", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      padding: 24px;
+    }
+    .layout {
+      width: min(960px, 100%);
+      display: grid;
+      gap: 16px;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+    h1 { margin: 0; }
+    p { margin: 0; color: var(--muted); }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+    .card {
+      padding: 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--card);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      display: grid;
+      gap: 12px;
+    }
+    a.button {
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 700;
+      color: #0a0d19;
+      background: linear-gradient(135deg, var(--accent), #3b82f6);
+      box-shadow: 0 10px 25px rgba(59, 130, 246, 0.35);
+      transition: transform 0.08s ease;
+    }
+    a.button.secondary {
+      background: linear-gradient(135deg, var(--accent-2), #6d28d9);
+      box-shadow: 0 10px 25px rgba(124, 58, 237, 0.35);
+    }
+    a.button:hover { transform: translateY(-1px); }
+    small { color: var(--muted); }
+  </style>
 </head>
 <body>
-  <p>Weiterleitung zu <a href="./chat-minimal/">chat-minimal</a> ...</p>
+  <div class="layout">
+    <header>
+      <div>
+        <h1>Willkommen</h1>
+        <p>Wähle zwischen der neuen Kalender-App und dem vorhandenen Chat.</p>
+      </div>
+    </header>
+    <div class="cards">
+      <div class="card">
+        <div>
+          <h2>Calenduo</h2>
+          <p>Ein schlanker Monatskalender mit Terminverwaltung im Browser (lokal gespeichert).</p>
+        </div>
+        <a class="button" href="./calendar/">Kalender öffnen ⟶</a>
+        <small>Speichert Events im Local Storage, kein Login nötig.</small>
+      </div>
+      <div class="card">
+        <div>
+          <h2>Mini Chat</h2>
+          <p>Einfache Chat-Oberfläche mit Word-Export und Model-Liste.</p>
+        </div>
+        <a class="button secondary" href="./chat-minimal/">Zum Chat ⟶</a>
+        <small>Bestehende Implementierung bleibt unverändert erreichbar.</small>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
