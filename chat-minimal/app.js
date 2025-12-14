@@ -7,9 +7,7 @@ const modelInfoEl = document.getElementById("model-info");
 const costInfoEl = document.getElementById("cost-info");
 const modelsBtnEl = document.getElementById("models-btn");
 const modelsOutputEl = document.getElementById("models-output");
-const docxBtnEl = document.getElementById("docx-btn");
 const docxListEl = document.getElementById("docx-list");
-const wordToggleEl = document.getElementById("word-toggle");
 const APP_VERSION = "1.4";
 const STORAGE_KEY = "mini-chat-token-lifetime";
 const TOKEN_PRICE_PER_M = 10; // USD pro 1 Mio Tokens
@@ -84,7 +82,7 @@ function renderDocxList() {
     const row = document.createElement("div");
     row.className = "docx-item";
     const label = document.createElement("span");
-    label.textContent = item.label;
+    label.textContent = `📄 ${item.label}`;
     const btn = document.createElement("button");
     btn.type = "button";
     btn.textContent = "Download";
@@ -133,7 +131,7 @@ formEl.addEventListener("submit", async (e) => {
     const res = await fetch(`${API_BASE}/api/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: text, wantDocx: !!(wordToggleEl && wordToggleEl.checked) })
+      body: JSON.stringify({ message: text, wantDocx: true })
     });
 
     if (!res.ok) {
@@ -190,9 +188,6 @@ formEl.addEventListener("submit", async (e) => {
       docxList.push({ label, b64: docxB64 });
       renderDocxList();
       addMsg("System", "Word-Datei erkannt: Panel \"Word-Dateien\" aktualisiert.");
-      if (docxBtnEl) docxBtnEl.disabled = false;
-    } else if (docxBtnEl && !docxList.length) {
-      docxBtnEl.disabled = true;
     }
   } catch (err) {
     addMsg("System", `Netzwerkfehler: ${err.message}`);
@@ -254,9 +249,4 @@ function downloadDocx(idx) {
   } catch (err) {
     addMsg("System", `Konnte Word-Datei nicht erzeugen: ${err.message}`);
   }
-}
-
-if (docxBtnEl) {
-  docxBtnEl.addEventListener("click", () => downloadDocx(docxList.length - 1));
-  docxBtnEl.disabled = true;
 }
